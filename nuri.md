@@ -95,4 +95,49 @@ Command 'gcc' not found, but can be installed with:
 apt install gcc
 Please ask your administrator.
 ```
-Vemos que necesitamos una "dependencia o algo asi llamada gcc para poder compliarlo. Como ej1 no es admin no puede instalarla. 
+Vemos que necesitamos una "dependencia" o algo asi llamada gcc para poder compliarlo. Como ej1 no es admin no puede instalarla. 
+
+```shell
+#me meto en mi usuario para instalarla y vuelvo a probar a compliar desde ej1
+
+nuri@nuriserver:~$ sudo apt install gcc
+ 
+#una vez instalado todo vuelvo a cambiar al user ej1 e intento compliar de nuevo
+
+ej1@nuriserver:~$ gcc delete_dir.c -o delete_dir
+delete_dir.c: In function ‘main’:
+delete_dir.c:11:13: warning: implicit declaration of function ‘rmdir’ [-Wimplicit-function-declaration]
+   11 |         if (rmdir(directorio) == 0)
+      |             ^~~~~
+ej1@nuriserver:~$
+```
+
+En este caso no sé muy bien porqué me da el error, puede que porque el archivo no tenga permisos de ejecución. 
+
+Vamos a cambiar a mi usuario, dárselos y volver a intentarlo desde ej1. 
+
+```shell
+ej1@nuriserver:~$ exit
+exit 
+nuri@nuriserver:~$ sudo chmod u+x ../ej1/delete_dir.c
+nuri@nuriserver:~$ su ej1
+Password:
+ej1@nuriserver:/home/nuri$ cd ../ej1
+ej1@nuriserver:~$
+ej1@nuriserver:~$ gcc delete_dir.c -o delete_dir
+delete_dir.c: In function ‘main’:
+delete_dir.c:11:13: warning: implicit declaration of function ‘rmdir’ [-Wimplicit-function-declaration]
+   11 |         if (rmdir(directorio) == 0)
+      |             ^~~~~
+ej1@nuriserver:~$
+```
+
+Me ha vuelto a salir el mismo error. Puede que como el usuario que esta intentando ejecutar el script no tenga permisos suficientes no se esté ejecutando correctamente. 
+
+ns SOS
+
+## Compruebo que ej1 es capaz de eliminar ebs
+
+```shell
+
+```
