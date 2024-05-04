@@ -109,35 +109,94 @@ delete_dir.c: In function ‘main’:
 delete_dir.c:11:13: warning: implicit declaration of function ‘rmdir’ [-Wimplicit-function-declaration]
    11 |         if (rmdir(directorio) == 0)
       |             ^~~~~
-ej1@nuriserver:~$
+ej1@nuriserver:~$ ls -l
+total 24
+-rwxr-xr-x 1 ej1 users 16264 abr 30 17:32 delete_dir
+-rwxr--r-- 1 ej1 users   398 abr 29 13:33 delete_dir.c
+drwxr-xr-x 2 ej1 users  4096 abr 30 17:27 esb
+ej1@nuriserver:~$ ls
+delete_dir  delete_dir.c  esb
+ej1@nuriserver:~$ ./delete_dir
+Intentando borrar el directorio '/home/ej1/esb' ...
+Directorio eliminado con éxito.
+
+# volvemos a crear esb
+
+
 ```
 
-En este caso no sé muy bien porqué me da el error, puede que porque el archivo no tenga permisos de ejecución. 
-
-Vamos a cambiar a mi usuario, dárselos y volver a intentarlo desde ej1. 
+## Descargamos script_delete_dir y comprobamos que tiene la misma funcionalidad que delete_dir
 
 ```shell
-ej1@nuriserver:~$ exit
-exit 
-nuri@nuriserver:~$ sudo chmod u+x ../ej1/delete_dir.c
+ej1@nuriserver:~$ curl  https://raw.githubusercontent.com/s-rom/SlidesUsuariosLinux/master/Ejercicio_ACL_SETUID/delete_dir.sh > script_delete_dir
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--    100   190  100   190    0     0    554      0 --:--:-- --:--:-- --:--:--   555
+ej1@nuriserver:~$ gcc script_delete_dir -o script_delete_dir.c
+script_delete_dir: file not recognized: file format not recognized
+collect2: error: ld returned 1 exit status
+
+# puede que script_delete_dir no necesite ser compilado, vamos a intentar ejecutarlo sin mas
+ej1@nuriserver:~$ ./script_delete_dir
+bash: ./script_delete_dir: Permission denied
+
+# vemos que nos faltan permisos, de ejecucion probablemente. Se los proporciono desde mi usuario
+
+nuri@nuriserver:~$ u+x home/ej1/script_delete_dir
+Command 'u+x' not found, did you mean:
+  command 'upx' from snap upx (v0.2.3)
+  command 'uux' from deb uucp (1.07-27build3)
+See 'snap info <snapname>' for additional versions.
+nuri@nuriserver:~$ chmod +x /home/ej1/script_delete_dir
+chmod: cannot access '/home/ej1/script_delete_dir': Permission denied
+
+#casi xd
+
+nuri@nuriserver:~$ sudo chmod +x /home/ej1/script_delete_dir
+[sudo] password for nuri:
 nuri@nuriserver:~$ su ej1
 Password:
 ej1@nuriserver:/home/nuri$ cd ../ej1
+ej1@nuriserver:~$ ./script_delete_dir
+Directorio eliminado '/home/ej1/esb' eliminado!
 ej1@nuriserver:~$
-ej1@nuriserver:~$ gcc delete_dir.c -o delete_dir
-delete_dir.c: In function ‘main’:
-delete_dir.c:11:13: warning: implicit declaration of function ‘rmdir’ [-Wimplicit-function-declaration]
-   11 |         if (rmdir(directorio) == 0)
-      |             ^~~~~
-ej1@nuriserver:~$
+
+# efectivamente vemos que era por tema de permisos de ejecucion del script. 
+
 ```
 
-Me ha vuelto a salir el mismo error. Puede que como el usuario que esta intentando ejecutar el script no tenga permisos suficientes no se esté ejecutando correctamente. 
-
-ns SOS
-
-## Compruebo que ej1 es capaz de eliminar ebs
+## Intentamo instalar comandos delete_dir y script_delete_dir en /usr/bin
 
 ```shell
+ej1@nuriserver:~$ cp script_delete_dir /usr/bin/
+cp: cannot create regular file '/usr/bin/script_delete_dir': Permission denied
+ej1@nuriserver:~$
+
+# vemos que al intentar copiar script_delete_dir nos da error, igual puede ser porque no esta compilado; vamos a ver con delete_script. 
+
+#delete_dir no compilado
+ej1@nuriserver:~$ cp delete_dir /usr/bin/
+cp: cannot create regular file '/usr/bin/delete_dir': Permission denied
+ej1@nuriserver:~$
+
+#delete_dir compilado
+ej1@nuriserver:~$ cp delete_dir.c /usr/bin/
+cp: cannot create regular file '/usr/bin/delete_dir.c': Permission denied
+ej1@nuriserver:~$
+
+#Descartamos que sea por motivos de compilacion.Como nos aparece permission denied podría ser que no nos dejara con el usuario ej1 porque no es sudoer y no podemos "forzar" la copia. Vamos a intentarlo en mi usuario.
+
+nuri@nuriserver:/home$ sudo cp /home/ej1/delete_dir /usr/bin/
+nuri@nuriserver:/home$ sudo cp /home/ej1/script_delete_dir /usr/bin/
+nuri@nuriserver:/home$
+
+# comprobacion de /usr/bin/ para ver si se han copiado correctamente
+
+nuri@nuriserver:/usr/bin$ ls -l | grep delete_dir
+-rwxr-xr-x 1 root root       16264 may  4 16:59 delete_dir
+-rwxr-xr-x 1 root root         190 may  4 17:00 script_delete_dir
+nuri@nuriserver:/usr/bin$
 
 ```
+
+## Añadido de excepción acl para que el usuario ej1 pueda copiar ficheros en /usr/bin/ únicamente. 
